@@ -19,7 +19,7 @@ import org.springframework.boot.web.servlet.error.ErrorAttributes;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.Validator;
+
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,16 +41,12 @@ public class UserControllerTest {
     @Mock
     private UserService userService;
 
-    @Mock
-    private Validator mockValidator;
-
     final private ErrorAttributes errorAttributes = new DefaultErrorAttributes();
 
 
     @BeforeEach
     void setUp() {
         this.mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setValidator(mockValidator)
                 .setControllerAdvice(new CustomExceptionHandler(errorAttributes))
                 .build();
     }
@@ -74,6 +70,21 @@ public class UserControllerTest {
                 .andExpect(status().isCreated());
 
         verify(userService).create(any());
+    }
+
+    @Test
+    void createBadRequestUserTest() throws Exception {
+        String json = """
+                        {
+                          "email": "example@example.com"
+                        }
+                """;
+
+        mockMvc.perform(post(USERS_LINK + "/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
+
     }
 
 
@@ -103,6 +114,21 @@ public class UserControllerTest {
         verify(userService).update(eq(userId), any(UpdateUserDto.class));
     }
 
+    @Test
+    void updateBadRequestUserTest() throws Exception {
+        String json = """
+                        {
+                          "email": "example@example.com"
+                        }
+                """;
+
+        mockMvc.perform(post(USERS_LINK + "/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
+
+    }
+
 
     @Test
     void testUpdateUserFields() throws Exception {
@@ -122,6 +148,24 @@ public class UserControllerTest {
                 .andExpect(status().isOk());
 
         verify(userService).updateUserFields(eq(userId), any(UpdateUserFieldsDto.class));
+    }
+
+    @Test
+    void testBadRequestUpdateUserFields() throws Exception {
+
+        long userId = 1L;
+        String json = """
+                        {
+                          "email": "test"
+                        }
+                """;
+
+        mockMvc.perform(patch(USERS_LINK + "/update/fields/{userId}", userId)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
     }
 
 
